@@ -1,26 +1,22 @@
 const request = require('supertest');
-const app = require('../src/app');
+const bcrypt = require("bcryptjs");
 const mongoose = require('mongoose');
+const app = require('../src/app');
 const User = require('../src/models/User');
-const { mongoURI } = require("../src/config/config");
 
-// Establish a connection before running any tests
 beforeAll(async () => {
-  await mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+  await mongoose.connect('mongodb://localhost:27017/test-real-time-chat', { useNewUrlParser: true, useUnifiedTopology: true });
 });
 
-// Clear the database and reset data after each test
 beforeEach(async () => {
   await User.deleteMany();
 });
 
-// Close the connection after all tests
-afterAll((done) => {
-  mongoose.connection.close();
-  done();
+afterAll(async () => {
+  await mongoose.connection.close();
 });
 
-describe('User Registration and Login', () => {
+describe('User Registration', () => {
   it('should register a new user', async () => {
     const response = await request(app)
       .post('/auth/register')
@@ -33,13 +29,30 @@ describe('User Registration and Login', () => {
     expect(response.body.message).toBe('User registered successfully');
   });
 
-  it('should login a registered user', async () => {
-    await request(app)
+  it('should not register a user with invalid credentials', async () => {
+    const response = await request(app)
       .post('/auth/register')
       .send({
-        username: 'testuser',
-        password: 'testpassword',
+        username: 'us', // Invalid username length
+        password: 'short', // Invalid password length
       });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body.errors).toBeDefined();
+  });
+});
+
+describe('User Login', () => {
+  beforeEach(async () => {
+    const hashedPassword = await bcrypt.hash('testpassword', 10);
+    const newUser = new User({
+      username: 'testuser',
+      password: hashedPassword,
+    });
+    await newUser.save();
+  });
+
+  it('should login a registered user', async () => {
     const response = await request(app)
       .post('/auth/login')
       .send({
@@ -49,5 +62,17 @@ describe('User Registration and Login', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body.token).toBeDefined();
+  });
+
+  it('should not login with invalid credentials', async () => {
+    const response = await request(app)
+      .post('/auth/login')
+      .send({
+        username: 'testuser',
+        password: 'wrongpassword',
+      });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.body.error).toBe('Invalid credentials');
   });
 });

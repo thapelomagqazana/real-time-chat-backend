@@ -1,11 +1,18 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const { validationResult } = require("express-validator");
 const authService = require("../services/authService");
 
 exports.registerUser = async (req, res) => {
     try
     {
+        const errors = validationResult(req);
+        if (!errors.isEmpty())
+        {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
         const { username, password } = req.body;
 
         // Hash the password before saving to the database
@@ -29,6 +36,12 @@ exports.registerUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
     try
     {
+        const errors = validationResult(req);
+        if (!errors.isEmpty())
+        {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        
         const { username, password } = req.body;
 
         const user = await User.findOne({ username });

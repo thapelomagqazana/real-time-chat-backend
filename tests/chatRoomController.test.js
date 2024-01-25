@@ -48,18 +48,19 @@ describe('Chat Room Creation and Joining', () => {
         password: 'testpassword',
       });
       await user.save();
-  
-      // Generate a valid token for the user
-      const token = generateToken(user);
-  
-      const createRoomResponse = await request(app)
-        .post('/chatroom/create')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          name: 'Test Chat Room',
-        });
 
-      const chatRoomId = createRoomResponse.body.chatroom._id;
+      const userId = user._id;
+
+      const chatroom = new ChatRoom({
+        name: 'Test Chat Room',
+        createdBy: userId,
+        members: [userId],
+      });
+
+      await chatroom.save();
+  
+      
+      const chatRoomId = chatroom._id;
 
       const user1 = new User({
         username: 'testuser1',
@@ -75,6 +76,37 @@ describe('Chat Room Creation and Joining', () => {
 
       expect(joinRoomResponse.statusCode).toBe(200);
       expect(joinRoomResponse.body.message).toBe('User joined the chat room successfully');
+
+  });
+
+  it("shouldn't allow user to join if user exists in the chat room", async () => {
+    const user = new User({
+        username: 'testuser',
+        password: 'testpassword',
+      });
+      await user.save();
+
+      const userId = user._id;
+
+      const chatroom = new ChatRoom({
+        name: 'Test Chat Room',
+        createdBy: userId,
+        members: [userId],
+      });
+
+      await chatroom.save();
+  
+      
+      const chatRoomId = chatroom._id;
+
+      const token = generateToken(user);
+
+      const joinRoomResponse = await request(app)
+      .post(`/chatroom/join/${chatRoomId}`)
+      .set('Authorization', `Bearer ${token}`);
+
+      expect(joinRoomResponse.statusCode).toBe(400);
+      expect(joinRoomResponse.body.error).toBe("User is already a member of this chat room");
 
   });
 });

@@ -6,5 +6,6 @@ const router = express.Router();
 
 router.post('/create', authMiddleware, chatRoomController.createChatRoom);
 router.post("/join/:chatRoomId", authMiddleware, chatRoomController.joinChatRoom);
+router.post("/exit/:chatRoomId", authMiddleware, chatRoomController.exitChatRoom);
 
 module.exports = router;

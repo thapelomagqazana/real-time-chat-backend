@@ -21,10 +21,7 @@ afterAll(async () => {
 describe('Chat Room Creation and Joining', () => {
   it('should create a new chat room', async () => {
     // Assuming you have a user registered (authentication is done)
-    const user = new User({
-      username: 'testuser',
-      password: 'testpassword',
-    });
+    const user = mockUser("testuser", "testpassword");
     await user.save();
 
     // Generate a valid token for the user
@@ -37,35 +34,24 @@ describe('Chat Room Creation and Joining', () => {
         name: 'Test Chat Room',
       });
 
-    // Change the expected status code to 401 if the request should be unauthorized
     expect(response.statusCode).toBe(201);
-    expect(response.body.chatroom).toBeDefined();
+    expect(response.body.message).toBe("Chat room successfully created");
   });
 
   it("should join an existing chat room", async () => {
-    const user = new User({
-        username: 'testuser',
-        password: 'testpassword',
-      });
+    const user = mockUser("testuser", "testpassword");
       await user.save();
 
       const userId = user._id;
 
-      const chatroom = new ChatRoom({
-        name: 'Test Chat Room',
-        createdBy: userId,
-        members: [userId],
-      });
+      const chatroom = mockChatRoom('Test Chat Room', userId, [userId]);
 
       await chatroom.save();
   
       
       const chatRoomId = chatroom._id;
 
-      const user1 = new User({
-        username: 'testuser1',
-        password: 'testpassword1',
-      });
+      const user1 = mockUser("testuser1", "testpassword1");
       await user1.save();
 
       const token1 = generateToken(user1);
@@ -80,23 +66,15 @@ describe('Chat Room Creation and Joining', () => {
   });
 
   it("shouldn't allow user to join if user exists in the chat room", async () => {
-    const user = new User({
-        username: 'testuser',
-        password: 'testpassword',
-      });
+    const user = mockUser("testuser", "testpassword");
       await user.save();
 
       const userId = user._id;
 
-      const chatroom = new ChatRoom({
-        name: 'Test Chat Room',
-        createdBy: userId,
-        members: [userId],
-      });
+      const chatroom = mockChatRoom('Test Chat Room', userId, [userId]);
 
       await chatroom.save();
   
-      
       const chatRoomId = chatroom._id;
 
       const token = generateToken(user);
@@ -110,3 +88,50 @@ describe('Chat Room Creation and Joining', () => {
 
   });
 });
+
+
+describe('Chat Room Exit', () => {
+  it('should exit an existing chat room', async () => {
+    const user = mockUser("testuser", "testpassword");
+    await user.save();
+
+    const userId = user._id;
+
+    const chatroom = mockChatRoom('Test Chat Room', userId, [userId]);
+
+    await chatroom.save();
+
+    const chatRoomId = chatroom._id;
+
+    const token = generateToken(user);
+
+    const exitRoomResponse = await request(app)
+      .post(`/chatroom/exit/${chatRoomId}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(exitRoomResponse.statusCode).toBe(200);
+    expect(exitRoomResponse.body.message).toBe('User exited the chat room successfully');
+  });
+});
+
+
+// Function to mock User
+function mockUser(username, password) {
+  const user = new User({
+    username: username,
+    password: password,
+  });
+
+  return user;
+}
+
+// Function to mock ChatRoom
+function mockChatRoom(name, createdBy, members){
+  const chatroom = new ChatRoom({
+    name: name,
+    createdBy: createdBy,
+    members: members,
+  });
+  return chatroom;
+}
+

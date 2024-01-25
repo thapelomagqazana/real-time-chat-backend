@@ -14,7 +14,7 @@ exports.createChatRoom = async (req, res) => {
 
         await chatroom.save();
 
-        res.status(201).json({ chatroom });
+        res.status(201).json({ message: "Chat room successfully created" });
     }
     catch (error)
     {
@@ -51,5 +51,37 @@ exports.joinChatRoom = async (req, res) => {
     {
         console.error("Error joining chat rooms:", error);
         res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+exports.exitChatRoom = async (req, res) => {
+    try
+    {
+        const { chatRoomId } = req.params;
+        const userId = req.userId;
+
+        const chatRoom = await ChatRoom.findById(chatRoomId);
+
+        if (!chatRoom)
+        {
+            return res.status(404).json({ error: 'Chat room not found' });
+        }
+
+        // Check if the user is a member of the chat room
+        if (!chatRoom.members.includes(userId))
+        {
+            return res.status(400).json({ error: 'User is not a member of this chat room' });
+        }
+
+        // Remove the user from the chat room's members
+        chatRoom.members = chatRoom.members.filter(memberId => memberId.toString() !== userId);
+
+        await chatRoom.save();
+        res.status(200).json({ message: 'User exited the chat room successfully' });
+    }
+    catch (error)
+    {
+        console.error('Error exiting chat room:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 };

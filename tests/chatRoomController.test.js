@@ -32,11 +32,25 @@ describe('Chat Room Creation and Joining', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         name: 'Test Chat Room',
+        tags: ['general', 'programming'],
       });
 
     expect(response.statusCode).toBe(201);
     expect(response.body.message).toBe("Chat room successfully created");
   });
+
+  it('should create a chat room with tags', async () => {
+    const user = mockUser("testuser1", "testpassword1");
+    await user.save();
+
+    const userId = user._id;
+
+    const chatroom = mockChatRoom('Test Chat Room', userId, [userId], ['general', 'programming']);
+
+    await chatroom.save();
+    expect(chatroom).toHaveProperty('tags', ['general', 'programming']);
+  });
+
 
   it("should join an existing chat room", async () => {
     const user = mockUser("testuser", "testpassword");
@@ -44,7 +58,7 @@ describe('Chat Room Creation and Joining', () => {
 
       const userId = user._id;
 
-      const chatroom = mockChatRoom('Test Chat Room', userId, [userId]);
+      const chatroom = mockChatRoom('Test Chat Room', userId, [userId], ['general', 'programming']);
 
       await chatroom.save();
   
@@ -71,7 +85,7 @@ describe('Chat Room Creation and Joining', () => {
 
       const userId = user._id;
 
-      const chatroom = mockChatRoom('Test Chat Room', userId, [userId]);
+      const chatroom = mockChatRoom('Test Chat Room', userId, [userId], ['general', 'programming']);
 
       await chatroom.save();
   
@@ -97,7 +111,7 @@ describe('Chat Room Exit', () => {
 
     const userId = user._id;
 
-    const chatroom = mockChatRoom('Test Chat Room', userId, [userId]);
+    const chatroom = mockChatRoom('Test Chat Room', userId, [userId], ['general', 'programming']);
 
     await chatroom.save();
 
@@ -114,6 +128,33 @@ describe('Chat Room Exit', () => {
   });
 });
 
+describe('Chat Room Categorization', () => {
+  it('should find chat rooms by tag', async () => {
+    const user = mockUser("testuser", "testpassword");
+    await user.save();
+
+    const userId = user._id;
+
+    // Create two chat rooms with different tags
+    const chatroom = mockChatRoom('General Chat', userId, [userId], ['general']);
+    await chatroom.save();
+
+    const chatroom1 = mockChatRoom('Programming Chat', userId, [userId], ['programming']);
+    await chatroom1.save();
+
+    const token = generateToken(user);
+
+    // Find chat rooms with the 'general' tag
+    const findRoomsResponse = await request(app)
+      .get('/chatroom/tags/general')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(findRoomsResponse.statusCode).toBe(200);
+    expect(findRoomsResponse.body.chatRooms).toHaveLength(1);
+    expect(findRoomsResponse.body.chatRooms[0].tags).toContain('general');
+  });
+});
+
 
 // Function to mock User
 function mockUser(username, password) {
@@ -126,11 +167,12 @@ function mockUser(username, password) {
 }
 
 // Function to mock ChatRoom
-function mockChatRoom(name, createdBy, members){
+function mockChatRoom(name, createdBy, members, tags){
   const chatroom = new ChatRoom({
     name: name,
     createdBy: createdBy,
     members: members,
+    tags: tags
   });
   return chatroom;
 }

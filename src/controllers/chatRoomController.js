@@ -3,13 +3,14 @@ const ChatRoom = require("../models/ChatRoom");
 exports.createChatRoom = async (req, res) => {
     try
     {
-        const { name } = req.body;
+        const { name, tags } = req.body;
         const createdBy = req.userId;
 
         const chatroom = new ChatRoom({
             name,
             createdBy,
             members: [createdBy], // Add the creator as a member
+            tags,
         });
 
         await chatroom.save();
@@ -82,6 +83,22 @@ exports.exitChatRoom = async (req, res) => {
     catch (error)
     {
         console.error('Error exiting chat room:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+exports.findChatRoomsByTag = async (req, res) => {
+    try
+    {
+        const { tag } = req.params;
+
+        const chatRooms = await ChatRoom.find({ tags: tag });
+
+        res.status(200).json({ chatRooms });
+    }
+    catch (error)
+    {
+        console.error('Error finding chat rooms by tag:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };

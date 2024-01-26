@@ -1,13 +1,11 @@
 const express = require("express");
 
-// const dotenv = require("dotenv");
 const authRoutes = require("./routes/authRoutes");
 const chatRoomRoutes = require("./routes/chatRoomRoutes");
+const messageRoutes = require("./routes/messageRoutes");
 
 const morgan = require("morgan");
 const cors = require("cors");
-
-// dotenv.config();
 
 const app = express();
 
@@ -21,6 +19,7 @@ app.use(cors());
 // Routes
 app.use("/auth", authRoutes);
 app.use("/chatroom", chatRoomRoutes);
+app.use("/message", messageRoutes);
 
 
 

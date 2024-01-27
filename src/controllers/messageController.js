@@ -23,6 +23,7 @@ exports.sendMessage = async (req, res) => {
       sender: senderId,
       chatRoom: chatRoomId,
       multimedia,
+      textIndex: content, // Index the content for search
     });
 
     await message.save();
@@ -84,4 +85,23 @@ exports.deleteMessage = async (req, res) => {
       console.error("Error deleting message:", error);
       res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
+
+exports.searchMessages = async (req, res) => {
+  try {
+    const { chatRoomId } = req.params;
+    const { query } = req.query;
+
+    const messages = await Message.find(
+      { chatRoom: chatRoomId, $text: { $search: query } },
+      { score: { $meta: 'textScore' } } // Sort by relevance score
+    )
+      .sort({ score: { $meta: 'textScore' } })
+      .exec();
+
+    res.status(200).json({ messages });
+  } catch (error) {
+    console.error('Error searching messages:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};

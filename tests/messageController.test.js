@@ -189,6 +189,54 @@ describe('deleteMessage Controller', () => {
 
 });
 
+describe('searchMessages Controller', () => {
+  it('should search for messages in a chat room', async () => {
+    const user = new User({
+      username: 'testuser',
+      password: 'testpassword',
+      role: 'admin',
+    });
+    await user.save();
+
+    const userId = user._id;
+
+    const chatroom = new ChatRoom({
+      name: "Test Chat Room",
+      createdBy: userId,
+      members: [userId],
+      tags: ['general', 'programming'],
+    });
+    await chatroom.save();
+ 
+    const chatRoomId = chatroom._id;
+
+    const testMessages = [
+      { content: 'Hello, this is a test message!' },
+      { content: 'Another best message for searching' },
+    ];
+
+    // Create test messages in the chat room
+    testMessages.forEach(async (msg) => {
+      await Message.create({
+        content: msg.content,
+        sender: userId,
+        chatRoom: chatRoomId,
+        textIndex: msg.content, // Index the content for search
+      });
+    });
+
+    const userToken = generateToken(user);
+
+    const response = await request(app)
+      .get(`/message/search/${chatRoomId}?query=test`)
+      .set('Authorization', `Bearer ${userToken}`);
+    
+    // console.log(response);
+    expect(response.statusCode).toBe(200);
+    expect(response.body.messages).toHaveLength(1); // Both messages contain 'test'
+  });
+});
+
 // Function to mock User
 function mockUser(username, password) {
     const user = new User({

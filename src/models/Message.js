@@ -23,11 +23,22 @@ const messageSchema = new mongoose.Schema({
         type: String,
         default: null,
     },
+    // Add an index for the content field to enable text search
+    // This index is specifically for the search functionality
+    // Ensure that your MongoDB server has text search enabled
+    // Example: db.messages.createIndex({ content: 'text' })
+    textIndex: {
+      type: String,
+      index: true,
+    },
     createdAt: {
       type: Date,
       default: Date.now,
     },
   });
+
+  // Create a text index on the textIndex field
+  messageSchema.index({ textIndex: 'text' });
   
   const Message = mongoose.model('Message', messageSchema);
   

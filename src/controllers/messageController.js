@@ -4,7 +4,7 @@ const uploadService = require('../services/uploadService');
 exports.sendMessage = async (req, res) => {
   try {
     const { content, chatRoomId } = req.body;
-    const senderId = req.userId;
+    const senderId = req.user.id;
 
     // Handle multimedia upload if present
     let multimedia = null;

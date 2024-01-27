@@ -3,6 +3,7 @@ const express = require("express");
 const authRoutes = require("./routes/authRoutes");
 const chatRoomRoutes = require("./routes/chatRoomRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const morgan = require("morgan");
 const cors = require("cors");
@@ -20,6 +21,7 @@ app.use(cors());
 app.use("/auth", authRoutes);
 app.use("/chatroom", chatRoomRoutes);
 app.use("/message", messageRoutes);
+app.use("/user", userRoutes);
 
 
 

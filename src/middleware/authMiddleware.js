@@ -15,16 +15,20 @@ const authMiddleware = async (req, res, next) => {
     // Verify the token
     const decoded = jwt.verify(token.replace("Bearer ", ""), secretKey);
 
-    // Find the user in the database based on the decoded user ID
-    // const user = await User.findById(decoded.sub);
+    // Fetch user information from the database using the decoded user ID
+    const user = await User.findById(decoded.userId);
 
     // Check if the user exists
-    // if (!user) {
-    //   return res.status(401).json({ error: 'Unauthorized - Invalid user' });
-    // }
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized - User not found' });
+    }
 
-    // Attach the user object to the request for further use
-    req.userId = decoded.userId;
+    // Attach user information, including the role, to the request for further use
+    req.user = {
+      id: user._id,
+      username: user.username,
+      role: user.role,
+    };
 
     // Move to the next middleware or route handler
     next();

@@ -78,7 +78,7 @@ exports.updateUser = async (req, res) => {
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const userId = req.userId;
+        const userId = req.user.id;
 
         const { username, password } = req.body;
 
@@ -110,5 +110,29 @@ exports.updateUser = async (req, res) => {
     {
         console.error('Error updating user:', error);
         res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+exports.assignRole = async (req, res) => {
+    try
+    {
+        const {userId, role} = req.body;
+
+        const user = await User.findById(userId);
+
+        if (!user)
+        {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        user.role = role;
+        await user.save();
+
+        res.status(200).json({ message: "Role assigned successfully", user });
+    }
+    catch (error)
+    {
+        console.error("Error assigning role:", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 };

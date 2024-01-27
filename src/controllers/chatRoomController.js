@@ -4,7 +4,7 @@ exports.createChatRoom = async (req, res) => {
     try
     {
         const { name, tags } = req.body;
-        const createdBy = req.userId;
+        const createdBy = req.user.id;
 
         const chatroom = new ChatRoom({
             name,
@@ -28,7 +28,7 @@ exports.joinChatRoom = async (req, res) => {
     try
     {
         const { chatRoomId } = req.params;
-        const userId = req.userId;
+        const userId = req.user.id;
 
         const chatRoom = await ChatRoom.findById(chatRoomId);
 
@@ -59,7 +59,7 @@ exports.exitChatRoom = async (req, res) => {
     try
     {
         const { chatRoomId } = req.params;
-        const userId = req.userId;
+        const userId = req.user.id;
 
         const chatRoom = await ChatRoom.findById(chatRoomId);
 

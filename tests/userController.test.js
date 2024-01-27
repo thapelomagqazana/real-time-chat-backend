@@ -90,7 +90,7 @@ describe('User Account Update', () => {
     const userToken = generateToken(newUser);
 
     const response = await request(app)
-      .put('/auth/update')
+      .put('/user/update')
       .set('Authorization', `Bearer ${userToken}`)
       .send({
         username: 'newUsername',
@@ -102,45 +102,52 @@ describe('User Account Update', () => {
     const updatedUser = await User.findById(newUser._id);
     expect(updatedUser.username).toBe('newUsername');
   });
-
-  // it('should update user account with new password', async () => {
-  //   const userToken = generateTestToken();
-  //   const userId = getUserIdFromToken(userToken);
-
-  //   const response = await request(app)
-  //     .put('/auth/update')
-  //     .set('Authorization', `Bearer ${userToken}`)
-  //     .send({
-  //       newPassword: 'newPassword',
-  //     });
-
-  //   expect(response.statusCode).toBe(200);
-  //   expect(response.body.message).toBe('User updated successfully');
-
-  //   const updatedUser = await User.findById(userId);
-  //   const isPasswordValid = await bcrypt.compare('newPassword', updatedUser.password);
-  //   expect(isPasswordValid).toBe(true);
-  // });
-
-  // it('should update user account with new username and password', async () => {
-  //   const userToken = generateTestToken();
-  //   const userId = getUserIdFromToken(userToken);
-
-  //   const response = await request(app)
-  //     .put('/auth/update')
-  //     .set('Authorization', `Bearer ${userToken}`)
-  //     .send({
-  //       username: 'newUsername',
-  //       newPassword: 'newPassword',
-  //     });
-
-  //   expect(response.statusCode).toBe(200);
-  //   expect(response.body.message).toBe('User updated successfully');
-
-  //   const updatedUser = await User.findById(userId);
-  //   expect(updatedUser.username).toBe('newUsername');
-
-  //   const isPasswordValid = await bcrypt.compare('newPassword', updatedUser.password);
-  //   expect(isPasswordValid).toBe(true);
-  // });
 });
+
+describe('User Roles', () => {
+  it('should assign a role to a user', async () => {
+    const regularUser = await User.create({
+      username: 'regularUser',
+      password: 'password',
+    });
+
+    await regularUser.save();
+
+    const regularUserToken = generateToken(regularUser);
+
+    const adminUser = await User.create({
+      username: 'adminUser',
+      password: 'password',
+      role: 'groupAdmin',
+    });
+
+    await adminUser.save();
+
+    const adminUserToken = generateToken(adminUser);
+
+    const responseRegularUser = await request(app)
+      .patch('/user/assign-role')
+      .set('Authorization', `Bearer ${regularUserToken}`)
+      .send({
+        userId: regularUser._id,
+        role: 'groupAdmin',
+      });
+
+    const responseAdminUser = await request(app)
+      .patch('/user/assign-role')
+      .set('Authorization', `Bearer ${adminUserToken}`)
+      .send({
+        userId: adminUser._id,
+        role: 'regular',
+      });
+
+    expect(responseRegularUser.statusCode).toBe(200);
+    expect(responseRegularUser.body.message).toBe('Role assigned successfully');
+    expect(responseRegularUser.body.user.role).toBe('groupAdmin');
+
+    expect(responseAdminUser.statusCode).toBe(200);
+    expect(responseAdminUser.body.message).toBe('Role assigned successfully');
+    expect(responseAdminUser.body.user.role).toBe('regular');
+  });
+});
+

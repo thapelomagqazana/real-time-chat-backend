@@ -13,7 +13,7 @@ const validateRegister = [
 
 ];
 
-router.post("/register", validateRegister, userController.registerUser);
-router.post("/login", userController.loginUser);
+router.put("/update", validateRegister, authMiddleware,userController.updateUser);
+router.patch("/assign-role", userController.assignRole);
 
 module.exports = router;

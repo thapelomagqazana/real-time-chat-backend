@@ -65,6 +65,130 @@ describe('Message Sending and Retrieval', () => {
 
 });
 
+describe('deleteMessage Controller', () => {
+  it('should delete a message from a chat room', async () => {
+    const user = new User({
+      username: 'testuser',
+      password: 'testpassword',
+      // role: 'admin',
+    });
+    await user.save();
+
+    const userId = user._id;
+
+    const chatroom = new ChatRoom({
+      name: "Test Chat Room",
+      createdBy: userId,
+      members: [userId],
+      admins: [userId],
+      tags: ['general', 'programming'],
+    });
+    await chatroom.save();
+ 
+    const chatRoomId = chatroom._id;
+
+    const message = mockMessage('This is a test message', userId, chatRoomId, null);
+    await message.save();
+
+    const userToken = generateToken(user);
+
+    const messageToDelete = await Message.findOne({ content: 'This is a test message' });
+
+    await request(app)
+      .patch(`/message/delete/${messageToDelete._id}`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .expect(200)
+      .then((response) => {
+        expect(response.body.message).toBe('Message deleted successfully');
+      });
+
+    // Verify that the message is marked as deleted in the database
+    const updatedMessage = await Message.findById(messageToDelete._id);
+    expect(updatedMessage.deleted).toBe(true);
+  });
+
+  it("shouldn't delete a message from a chat room if they don't have the right", async () => {
+    const user = new User({
+      username: 'testuser',
+      password: 'testpassword',
+      // role: 'admin',
+    });
+    await user.save();
+
+    const userId = user._id;
+
+    const chatroom = new ChatRoom({
+      name: "Test Chat Room",
+      createdBy: userId,
+      members: [userId],
+      tags: ['general', 'programming'],
+    });
+    await chatroom.save();
+ 
+    const chatRoomId = chatroom._id;
+
+    const message = mockMessage('This is a test message', userId, chatRoomId, null);
+    await message.save();
+
+    const userToken = generateToken(user);
+
+    const messageToDelete = await Message.findOne({ content: 'This is a test message' });
+
+    await request(app)
+      .patch(`/message/delete/${messageToDelete._id}`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .expect(403)
+      .then((response) => {
+        expect(response.body.error).toBe("Unauthorized - Insufficient privileges");
+      });
+
+    // Verify that the message is marked as deleted in the database
+    const updatedMessage = await Message.findById(messageToDelete._id);
+    expect(updatedMessage.deleted).toBe(false);
+  });
+
+  it("should delete a message from a chat room by super Admin", async () => {
+    const user = new User({
+      username: 'testuser',
+      password: 'testpassword',
+      role: 'admin',
+    });
+    await user.save();
+
+    const userId = user._id;
+
+    const chatroom = new ChatRoom({
+      name: "Test Chat Room",
+      createdBy: userId,
+      members: [userId],
+      tags: ['general', 'programming'],
+    });
+    await chatroom.save();
+ 
+    const chatRoomId = chatroom._id;
+
+    const message = mockMessage('This is a test message', userId, chatRoomId, null);
+    await message.save();
+
+    const userToken = generateToken(user);
+
+    const messageToDelete = await Message.findOne({ content: 'This is a test message' });
+
+    await request(app)
+      .patch(`/message/delete/${messageToDelete._id}`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .expect(200)
+      .then((response) => {
+        expect(response.body.message).toBe('Message deleted successfully');
+      });
+
+    // Verify that the message is marked as deleted in the database
+    const updatedMessage = await Message.findById(messageToDelete._id);
+    expect(updatedMessage.deleted).toBe(true);
+  });
+
+});
+
 // Function to mock User
 function mockUser(username, password) {
     const user = new User({
@@ -86,4 +210,14 @@ function mockUser(username, password) {
     return chatroom;
   }
   
-  
+  function mockMessage(content, senderId, chatRoomId, multimedia)
+  {
+    const message = new Message({
+      content: content,
+      sender: senderId,
+      chatRoom: chatRoomId,
+      multimedia: multimedia,
+    });
+
+    return message;
+  }

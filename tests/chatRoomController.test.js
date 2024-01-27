@@ -86,7 +86,6 @@ describe('Chat Room Creation and Joining', () => {
       const userId = user._id;
 
       const chatroom = mockChatRoom('Test Chat Room', userId, [userId], ['general', 'programming']);
-
       await chatroom.save();
   
       const chatRoomId = chatroom._id;
@@ -152,6 +151,100 @@ describe('Chat Room Categorization', () => {
     expect(findRoomsResponse.statusCode).toBe(200);
     expect(findRoomsResponse.body.chatRooms).toHaveLength(1);
     expect(findRoomsResponse.body.chatRooms[0].tags).toContain('general');
+  });
+});
+
+describe('banUser Controller', () => {
+  it('should ban a user from a chat room', async () => {
+
+    const user = new User({
+      username: 'testuser',
+      password: 'testpassword',
+      // role: 'admin',
+    });
+    await user.save();
+
+    const userId = user._id;
+
+    const user1 = new User({
+      username: 'testuser1',
+      password: 'testpassword1',
+      // role: 'admin',
+    });
+    await user1.save();
+
+    const chatroom = new ChatRoom({
+      name: "Test Chat Room",
+      createdBy: userId,
+      members: [userId, user1._id],
+      admins: [userId],
+      tags: ['general', 'programming'],
+    });
+    await chatroom.save();
+
+
+    const token = generateToken(user);
+
+    const userToBan = await User.findOne({ username: 'testuser1' });
+    const chatRoomToBanFrom = await ChatRoom.findOne({ name: 'Test Chat Room' });
+
+    await request(app)
+      .patch(`/chatroom/ban-user/${chatRoomToBanFrom._id}/${userToBan._id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200)
+      .then((response) => {
+        expect(response.body.message).toBe('User banned successfully');
+      });
+
+    // Verify that the user is marked as banned in the database
+    const updatedUser = await User.findById(userToBan._id);
+    expect(updatedUser.banned).toBe(true);
+  });
+
+  it("shouldn't ban a user from a chat room if they don't have rights", async () => {
+
+    const user = new User({
+      username: 'testuser',
+      password: 'testpassword',
+      // role: 'admin',
+    });
+    await user.save();
+
+    const userId = user._id;
+
+    const user1 = new User({
+      username: 'testuser1',
+      password: 'testpassword1',
+      // role: 'admin',
+    });
+    await user1.save();
+
+    const chatroom = new ChatRoom({
+      name: "Test Chat Room",
+      createdBy: userId,
+      members: [userId, user1._id],
+      // admins: [userId],
+      tags: ['general', 'programming'],
+    });
+    await chatroom.save();
+
+
+    const token = generateToken(user);
+
+    const userToBan = await User.findOne({ username: 'testuser1' });
+    const chatRoomToBanFrom = await ChatRoom.findOne({ name: 'Test Chat Room' });
+
+    await request(app)
+      .patch(`/chatroom/ban-user/${chatRoomToBanFrom._id}/${userToBan._id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(403)
+      .then((response) => {
+        expect(response.body.error).toBe("Unauthorized - Insufficient privileges");
+      });
+
+    // Verify that the user is marked as banned in the database
+    const updatedUser = await User.findById(userToBan._id);
+    expect(updatedUser.banned).toBe(false);
   });
 });
 

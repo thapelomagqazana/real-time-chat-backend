@@ -8,5 +8,6 @@ router.post('/create', authMiddleware, chatRoomController.createChatRoom);
 router.post("/join/:chatRoomId", authMiddleware, chatRoomController.joinChatRoom);
 router.post("/exit/:chatRoomId", authMiddleware, chatRoomController.exitChatRoom);
 router.get("/tags/:tag", authMiddleware, chatRoomController.findChatRoomsByTag);
+router.patch("/ban-user/:chatRoomId/:userId", authMiddleware, chatRoomController.banUser);
 
 module.exports = router;

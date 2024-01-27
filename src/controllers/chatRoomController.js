@@ -1,4 +1,6 @@
 const ChatRoom = require("../models/ChatRoom");
+const User = require("../models/User");
+const Message = require("../models/Message");
 
 exports.createChatRoom = async (req, res) => {
     try
@@ -10,6 +12,7 @@ exports.createChatRoom = async (req, res) => {
             name,
             createdBy,
             members: [createdBy], // Add the creator as a member
+            admins: [createdBy],
             tags,
         });
 
@@ -35,6 +38,11 @@ exports.joinChatRoom = async (req, res) => {
         if (!chatRoom)
         {
             return res.status(404).json({ error: "Chat room not found" });
+        }
+
+        if (req.user.banned !== false)
+        {
+            return res.status(403).json({ error: "Unauthorized - Insufficient privileges" });
         }
 
         // Check if the user is already a member
@@ -100,5 +108,48 @@ exports.findChatRoomsByTag = async (req, res) => {
     {
         console.error('Error finding chat rooms by tag:', error);
         res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+exports.banUser = async (req, res) => {
+    try
+    {
+        const { chatRoomId, userId } = req.params;
+
+        // Access user information, including the role, from the req.user object
+        const { id: adminId, role } = req.user
+
+        const chatRoom = await ChatRoom.findById(chatRoomId);
+
+        if (!chatRoom)
+        {
+            return res.status(404).json({ error: "Chat room not found" });
+        }
+
+        // Check if the user being banned is a member of the chat room
+        if (!chatRoom.members.includes(userId))
+        {
+            return res.status(404).json({ error: "User not found in the chat room" });
+        }
+
+        // Check if the user has the necessary role to ban a user
+        if (chatRoom.admins.includes(adminId) || role === "admin")
+        {
+            // Ban the user (update the user's banned status in the database)
+            await User.findByIdAndUpdate(userId, { banned: true });
+
+            res.status(200).json({ message: "User banned successfully" });
+        }
+        else
+        {
+            return res.status(403).json({ error: "Unauthorized - Insufficient privileges" });
+        }
+
+        
+    }
+    catch (error)
+    {
+        console.error("Error banning user:", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 };

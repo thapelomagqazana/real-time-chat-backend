@@ -28,6 +28,7 @@ const authMiddleware = async (req, res, next) => {
       id: user._id,
       username: user.username,
       role: user.role,
+      banned: user.banned,
     };
 
     // Move to the next middleware or route handler

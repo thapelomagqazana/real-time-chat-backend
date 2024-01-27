@@ -15,6 +15,10 @@ const messageSchema = new mongoose.Schema({
       ref: 'ChatRoom',
       required: true,
     },
+    deleted: {
+      type: Boolean, 
+      default: false,
+    },
     multimedia: {
         type: String,
         default: null,

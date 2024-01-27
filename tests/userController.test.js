@@ -118,7 +118,7 @@ describe('User Roles', () => {
     const adminUser = await User.create({
       username: 'adminUser',
       password: 'password',
-      role: 'groupAdmin',
+      role: 'admin',
     });
 
     await adminUser.save();
@@ -130,7 +130,7 @@ describe('User Roles', () => {
       .set('Authorization', `Bearer ${regularUserToken}`)
       .send({
         userId: regularUser._id,
-        role: 'groupAdmin',
+        role: 'admin',
       });
 
     const responseAdminUser = await request(app)
@@ -138,16 +138,16 @@ describe('User Roles', () => {
       .set('Authorization', `Bearer ${adminUserToken}`)
       .send({
         userId: adminUser._id,
-        role: 'regular',
+        role: 'user',
       });
 
     expect(responseRegularUser.statusCode).toBe(200);
     expect(responseRegularUser.body.message).toBe('Role assigned successfully');
-    expect(responseRegularUser.body.user.role).toBe('groupAdmin');
+    expect(responseRegularUser.body.user.role).toBe('admin');
 
     expect(responseAdminUser.statusCode).toBe(200);
     expect(responseAdminUser.body.message).toBe('Role assigned successfully');
-    expect(responseAdminUser.body.user.role).toBe('regular');
+    expect(responseAdminUser.body.user.role).toBe('user');
   });
 });
 
